@@ -1,0 +1,45 @@
+:root {
+  --tea-700: #31432b;
+  --tea-900: #1f2a1c;
+  --gold-500: #e0ac3c;
+  --gold-600: #c9962c;
+  --cream: #faf5e9;
+  --cream-2: #f2ead6;
+  --charcoal: #211d18;
+  --ink-muted: #726b5c;
+  --line: rgba(33, 29, 24, 0.1);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: 'Manrope', sans-serif;
+  background: var(--cream);
+  color: var(--charcoal);
+}
+
+h1, h2, h3 { font-family: 'Fraunces', serif; }
+
+.card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 1px 2px rgba(33, 29, 24, 0.04), 0 10px 30px -12px rgba(33, 29, 24, 0.18);
+}
+
+.btn {
+  font-family: 'Manrope';
+  font-weight: 700;
+  font-size: 14px;
+  border: none;
+  border-radius: 12px;
+  padding: 13px 22px;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: linear-gradient(160deg, var(--gold-500), var(--gold-600));
+  color: #3a2606;
+}
