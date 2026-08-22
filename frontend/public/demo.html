@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ChaiPass — One QR. One tea. Every day.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root{
+    --tea-900:#1f2a1c;
+    --tea-700:#31432b;
+    --tea-600:#3f5638;
+    --tea-500:#4f6b46;
+    --tea-300:#8ba578;
+    --tea-100:#dfe9d3;
+    --brown-800:#3a2414;
+    --brown-600:#6b4423;
+    --brown-400:#a06b3c;
+    --gold-600:#c9962c;
+    --gold-500:#e0ac3c;
+    --gold-100:#f6e3bc;
+    --cream:#faf5e9;
+    --cream-2:#f2ead6;
+    --white:#ffffff;
+    --charcoal:#211d18;
+    --charcoal-2:#3a352c;
+    --ink-muted:#726b5c;
+    --line: rgba(33,29,24,0.1);
+    --radius-lg:20px;
+    --radius-md:14px;
+    --radius-sm:9px;
+    --shadow-card: 0 1px 2px rgba(33,29,24,0.04), 0 10px 30px -12px rgba(33,29,24,0.18);
+    --ok:#3f6b3f;
+    --ok-bg:#e6f0e3;
+    --err:#a13a2b;
+    --err-bg:#fbe8e2;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Manrope', sans-serif;
+    background: var(--cream);
+    color: var(--charcoal);
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{max-width:1180px;margin:0 auto;padding:0 20px 80px;}
+  h1,h2,h3,.serif{font-family:'Fraunces', serif;}
+
+  /* ---------- top bar ---------- */
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:20px 0;
+  }
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand-mark{
+    width:40px;height:40px;border-radius:11px;
+    background: linear-gradient(160deg, var(--tea-600), var(--tea-900));
+    display:flex;align-items:center;justify-content:center;
+    box-shadow: var(--shadow-card);
+  }
+  .brand-mark svg{width:22px;height:22px;}
+  .brand-name{font-family:'Fraunces', serif;font-weight:600;font-size:21px;letter-spacing:-0.01em;color:var(--charcoal);}
+  .brand-tag{font-size:11px;color:var(--ink-muted);letter-spacing:.06em;text-transform:uppercase;margin-top:-2px;}
+
+  .role-switch{
+    display:flex;background:var(--cream-2);border:1px solid var(--line);border-radius:999px;padding:4px;gap:2px;
+  }
+  .role-switch button{
+    border:none;background:transparent;padding:9px 16px;border-radius:999px;font-family:'Manrope';
+    font-weight:700;font-size:13px;color:var(--ink-muted);cursor:pointer;transition:.2s;white-space:nowrap;
+  }
+  .role-switch button.active{background:var(--charcoal);color:var(--cream);}
+
+  /* ---------- hero ---------- */
+  .hero{
+    margin-top:8px;border-radius:28px;overflow:hidden;position:relative;
+    background: radial-gradient(120% 160% at 90% -10%, #4a6540 0%, #31432b 45%, #1f2a1c 100%);
+    padding:52px 44px;color:var(--cream);
+    display:grid;grid-template-columns:1.15fr 0.85fr;gap:32px;align-items:center;
+  }
+  .hero-eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-500);font-weight:700;}
+  .hero h1{font-size:42px;line-height:1.08;margin:14px 0 16px;font-weight:600;letter-spacing:-0.01em;}
+  .hero p{font-size:15.5px;line-height:1.65;color:#e4e9dc;max-width:440px;margin:0 0 26px;}
+  .hero-steps{display:flex;gap:0;flex-wrap:wrap;}
+  .hero-step{display:flex;align-items:center;gap:10px;padding:10px 16px 10px 0;}
+  .hero-step .num{
+    width:26px;height:26px;border-radius:50%;border:1px solid rgba(250,245,233,.35);
+    display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--gold-500);flex:none;
+  }
+  .hero-step span.label{font-size:13px;color:#e4e9dc;font-weight:600;}
+  .hero-step .arrow{color:rgba(250,245,233,.4);margin:0 6px;}
+
+  .hero-visual{
+    background: rgba(250,245,233,0.06); border:1px solid rgba(250,245,233,0.14);
+    border-radius:22px; padding:26px; display:flex;flex-direction:column;align-items:center;gap:14px;
+  }
+  .hero-cup{width:100%;display:flex;justify-content:center;}
+  .steam{transform-origin:center;animation:rise 3s ease-in-out infinite;}
+  .steam.s2{animation-delay:.5s}
+  .steam.s3{animation-delay:1s}
+  @keyframes rise{
+    0%{opacity:0;transform:translateY(6px) scaleY(.8);}
+    30%{opacity:.8;}
+    80%{opacity:0;transform:translateY(-14px) scaleY(1.1);}
+    100%{opacity:0;}
+  }
+  .hero-visual .cap{font-size:12px;color:#d8e0cc;text-align:center;}
+  .hero-visual .cap b{color:var(--gold-500);}
+
+  /* ---------- section shell ---------- */
+  .panel-head{display:flex;align-items:baseline;justify-content:space-between;margin:40px 0 18px;flex-wrap:wrap;gap:8px;}
+  .panel-head h2{font-size:22px;font-weight:600;margin:0;}
+  .panel-head .sub{font-size:13px;color:var(--ink-muted);}
+
+  .grid{display:grid;gap:18px;}
+  .grid.cols-3{grid-template-columns:repeat(3,1fr);}
+  .grid.cols-2{grid-template-columns:repeat(2,1fr);}
+  .grid.cols-4{grid-template-columns:repeat(4,1fr);}
+
+  .card{
+    background:var(--white);border:1px solid var(--line);border-radius:var(--radius-lg);
+    padding:24px;box-shadow: var(--shadow-card);
+  }
+  .card.flush{padding:0;overflow:hidden;}
+
+  /* ---------- badges/pills ---------- */
+  .pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:5px 12px;border-radius:999px;}
+  .pill.ok{background:var(--ok-bg);color:var(--ok);}
+  .pill.warn{background:var(--gold-100);color:#8a5c0e;}
+  .pill.err{background:var(--err-bg);color:var(--err);}
+  .pill.neutral{background:var(--cream-2);color:var(--ink-muted);}
+  .dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+
+  /* ---------- customer dashboard ---------- */
+  .status-card{
+    background: linear-gradient(160deg, var(--tea-700), var(--tea-900));
+    color:var(--cream); border:none; position:relative; overflow:hidden;
+  }
+  .status-card .row-top{display:flex;justify-content:space-between;align-items:flex-start;}
+  .status-card h3{margin:0 0 4px;font-size:15px;font-weight:700;color:#dbe6cf;}
+  .status-card .big{font-family:'Fraunces';font-size:34px;font-weight:600;margin:2px 0;}
+  .status-card .meta{font-size:12.5px;color:#c4d1b6;}
+  .progress-wrap{margin-top:18px;}
+  .progress-track{height:8px;border-radius:99px;background:rgba(250,245,233,.15);overflow:hidden;}
+  .progress-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--gold-500),var(--gold-600));}
+
+  .tea-today{display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;padding:34px 24px;}
+  .cup-icon-wrap{
+    width:84px;height:84px;border-radius:50%;background:var(--cream-2);
+    display:flex;align-items:center;justify-content:center;border:1px solid var(--line);
+  }
+  .tea-today h3{margin:0;font-size:19px;font-weight:600;}
+  .tea-today p{margin:0;color:var(--ink-muted);font-size:13.5px;max-width:260px;}
+  .btn{
+    font-family:'Manrope';font-weight:700;font-size:14px;border:none;border-radius:12px;
+    padding:13px 22px;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:8px;
+  }
+  .btn-primary{background: linear-gradient(160deg, var(--gold-500), var(--gold-600));color:#3a2606;}
+  .btn-primary:hover{filter:brightness(1.04);transform:translateY(-1px);}
+  .btn-primary:disabled{background:var(--cream-2);color:var(--ink-muted);cursor:not-allowed;transform:none;filter:none;}
+  .btn-dark{background:var(--charcoal);color:var(--cream);}
+  .btn-dark:hover{background:var(--charcoal-2);}
+  .btn-outline{background:transparent;border:1px solid var(--line);color:var(--charcoal);}
+  .btn-outline:hover{background:var(--cream-2);}
+  .btn-sm{padding:8px 14px;font-size:12.5px;border-radius:9px;}
+
+  .qr-box{
+    display:flex;flex-direction:column;align-items:center;gap:12px;padding:26px;
+    background:var(--cream-2); border-radius:16px; margin-top:6px;
+  }
+  #qrcode{background:white;padding:12px;border-radius:12px;line-height:0;}
+  .qr-timer{font-family:'IBM Plex Mono';font-size:13px;color:var(--brown-600);font-weight:500;}
+  .qr-timer b{color:var(--err);}
+
+  .list-row{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--line);}
+  .list-row:last-child{border-bottom:none;}
+  .list-row .l-left{display:flex;align-items:center;gap:12px;}
+  .icon-chip{
+    width:38px;height:38px;border-radius:10px;background:var(--tea-100);display:flex;align-items:center;justify-content:center;flex:none;
+  }
+  .l-title{font-size:13.5px;font-weight:700;color:var(--charcoal);}
+  .l-sub{font-size:12px;color:var(--ink-muted);margin-top:1px;}
+  .l-right{font-size:12px;color:var(--ink-muted);font-family:'IBM Plex Mono';}
+
+  .shop-card{border-radius:14px;border:1px solid var(--line);padding:14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .shop-card:last-child{margin-bottom:0;}
+  .shop-name{font-weight:700;font-size:13.5px;}
+  .shop-meta{font-size:12px;color:var(--ink-muted);margin-top:2px;}
+
+  /* ---------- shop owner dashboard ---------- */
+  .scan-zone{
+    border:2px dashed var(--tea-300); border-radius:18px; padding:40px 24px;text-align:center;
+    background: repeating-linear-gradient(135deg, var(--cream-2) 0 12px, var(--cream) 12px 24px);
+  }
+  .scan-zone .frame{
+    width:150px;height:150px;margin:0 auto 18px;border-radius:16px;background:var(--white);
+    border:1px solid var(--line);display:flex;align-items:center;justify-content:center;position:relative;
+  }
+  .scan-line{position:absolute;left:8%;right:8%;height:2px;background:var(--gold-600);top:20%;animation:scan 1.8s ease-in-out infinite;}
+  @keyframes scan{0%{top:14%;}50%{top:82%;}100%{top:14%;}}
+  input.token-input{
+    width:100%;font-family:'IBM Plex Mono';font-size:12.5px;padding:11px 13px;border-radius:10px;
+    border:1px solid var(--line);background:var(--cream-2);color:var(--charcoal-2);margin-top:14px;
+  }
+  .validate-result{margin-top:16px;padding:14px 16px;border-radius:12px;font-size:13.5px;font-weight:600;display:none;align-items:center;gap:10px;}
+  .validate-result.show{display:flex;}
+  .validate-result.success{background:var(--ok-bg);color:var(--ok);}
+  .validate-result.fail{background:var(--err-bg);color:var(--err);}
+
+  .metric{background:var(--cream-2);border-radius:14px;padding:16px 18px;}
+  .metric .m-label{font-size:11.5px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700;}
+  .metric .m-val{font-family:'Fraunces';font-size:26px;font-weight:600;margin-top:4px;color:var(--charcoal);}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-muted);padding:0 4px 10px;font-weight:700;border-bottom:1px solid var(--line);}
+  tbody td{padding:12px 4px;border-bottom:1px solid var(--line);color:var(--charcoal-2);}
+  tbody tr:last-child td{border-bottom:none;}
+
+  /* ---------- admin dashboard ---------- */
+  .stat-card{padding:18px 20px;}
+  .stat-card .s-icon{
+    width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;
+  }
+  .stat-card .s-label{font-size:12px;color:var(--ink-muted);font-weight:700;}
+  .stat-card .s-val{font-family:'Fraunces';font-size:26px;font-weight:600;margin-top:2px;}
+  .stat-card .s-delta{font-size:11.5px;color:var(--ok);margin-top:6px;font-weight:700;}
+
+  .approve-row{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--line);}
+  .approve-row:last-child{border-bottom:none;}
+  .approve-actions{display:flex;gap:8px;}
+
+  .audit-row{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);align-items:flex-start;}
+  .audit-row:last-child{border-bottom:none;}
+  .audit-dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex:none;}
+  .audit-text{font-size:13px;}
+  .audit-time{font-size:11.5px;color:var(--ink-muted);font-family:'IBM Plex Mono';margin-top:2px;}
+
+  .section{display:none;}
+  .section.active{display:block;animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+
+  .toast{
+    position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:var(--charcoal);color:var(--cream);padding:13px 22px;border-radius:12px;
+    font-size:13.5px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,.25);opacity:0;
+    transition:.25s;pointer-events:none;z-index:50;display:flex;align-items:center;gap:10px;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  @media(max-width:920px){
+    .hero{grid-template-columns:1fr;padding:36px 26px;}
+    .hero h1{font-size:32px;}
+    .grid.cols-3, .grid.cols-4{grid-template-columns:repeat(2,1fr);}
+    .grid.cols-2{grid-template-columns:1fr;}
+  }
+  @media(max-width:600px){
+    .topbar{flex-direction:column;align-items:flex-start;gap:14px;}
+    .role-switch{width:100%;overflow-x:auto;}
+    .grid.cols-3, .grid.cols-4{grid-template-columns:1fr 1fr;}
+    .hero-step span.label{font-size:12px;}
+    .hero h1{font-size:26px;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 9h13a3 3 0 0 1 0 6h-1" stroke="#f6e3bc" stroke-width="1.6" stroke-linecap="round"/><path d="M4 9v6a4 4 0 0 0 4 4h4a4 4 0 0 0 4-4v-1" stroke="#faf5e9" stroke-width="1.6" stroke-linecap="round"/><path d="M8 5.5c0 1-1 1-1 2M12 5.5c0 1-1 1-1 2" stroke="#e0ac3c" stroke-width="1.4" stroke-linecap="round"/></svg>
+      </div>
+      <div>
+        <div class="brand-name">ChaiPass</div>
+        <div class="brand-tag">One QR · one tea · every day</div>
+      </div>
+    </div>
+    <div class="role-switch" id="roleSwitch">
+      <button class="active" data-role="customer">Customer</button>
+      <button data-role="shop">Shop owner</button>
+      <button data-role="admin">Admin</button>
+    </div>
+  </div>
+
+  <div class="hero">
+    <div>
+      <div class="hero-eyebrow">₹500 / 30 days · unlimited shops</div>
+      <h1>Your daily tea,<br/>already paid for.</h1>
+      <p>One subscription unlocks one fresh cup a day at any participating tea shop in the city. Open the app, tap once, scan, sip.</p>
+      <div class="hero-steps">
+        <div class="hero-step"><div class="num">1</div><span class="label">Open app</span></div>
+        <span class="arrow">→</span>
+        <div class="hero-step"><div class="num">2</div><span class="label">See today's tea</span></div>
+        <span class="arrow">→</span>
+        <div class="hero-step"><div class="num">3</div><span class="label">Scan QR</span></div>
+        <span class="arrow">→</span>
+        <div class="hero-step"><div class="num">4</div><span class="label">Tea approved</span></div>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <svg class="hero-cup" width="120" height="110" viewBox="0 0 120 110" fill="none">
+        <path class="steam s1" d="M46 30c-6-8 6-12 0-22" stroke="#f6e3bc" stroke-width="2.4" stroke-linecap="round"/>
+        <path class="steam s2" d="M60 30c-6-8 6-12 0-22" stroke="#f6e3bc" stroke-width="2.4" stroke-linecap="round"/>
+        <path class="steam s3" d="M74 30c-6-8 6-12 0-22" stroke="#f6e3bc" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="M22 42h62l-6 34a12 12 0 0 1-12 10H40a12 12 0 0 1-12-10L22 42Z" fill="#e0ac3c"/>
+        <path d="M84 48h6a10 10 0 0 1 0 20h-4" stroke="#faf5e9" stroke-width="3" stroke-linecap="round"/>
+        <rect x="18" y="86" width="70" height="8" rx="4" fill="#31432b"/>
+      </svg>
+      <div class="cap">Today's cup at <b>Green Leaf Tea House</b><br/>Scan to redeem · resets daily</div>
+    </div>
+  </div>
+
+  <!-- ============ CUSTOMER DASHBOARD ============ -->
+  <div class="section active" id="sec-customer">
+
+    <div class="panel-head"><h2>Your subscription</h2><span class="sub">Plan renews on 18 Sep 2026</span></div>
+    <div class="grid cols-3">
+      <div class="card status-card">
+        <div class="row-top">
+          <div><h3>Days remaining</h3><div class="big">21<span style="font-size:16px;color:#c4d1b6;">/30</span></div></div>
+          <span class="pill ok" style="background:rgba(230,240,227,.15);color:#dbe6cf;"><span class="dot"></span>Active</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-track"><div class="progress-fill" style="width:70%"></div></div>
+          <div class="meta" style="margin-top:8px;">21 teas left on the ₹500 plan</div>
+        </div>
+      </div>
+
+      <div class="card tea-today" id="teaTodayCard">
+        <div class="cup-icon-wrap">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none"><path d="M4 9h13a3 3 0 0 1 0 6h-1" stroke="#6b4423" stroke-width="1.7" stroke-linecap="round"/><path d="M4 9v6a4 4 0 0 0 4 4h4a4 4 0 0 0 4-4v-1" stroke="#3f5638" stroke-width="1.7" stroke-linecap="round"/></svg>
+        </div>
+        <h3 id="teaTodayTitle">Today's tea is ready</h3>
+        <p id="teaTodaySub">Generate your QR and show it to any participating shop to redeem.</p>
+        <button class="btn btn-primary" id="getTeaBtn" onclick="generateQr()">Get today's tea</button>
+
+        <div class="qr-box" id="qrBox" style="display:none;">
+          <div id="qrcode"></div>
+          <div class="qr-timer">Expires in <b id="qrCountdown">90</b>s · single use</div>
+          <button class="btn btn-outline btn-sm" onclick="resetQr()">Cancel</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin:0 0 14px;font-size:15px;">Nearby tea shops</h3>
+        <div class="shop-card"><div><div class="shop-name">Green Leaf Tea House</div><div class="shop-meta">0.4 km · Indiranagar</div></div><span class="pill ok">Open</span></div>
+        <div class="shop-card"><div><div class="shop-name">Chai Adda Corner</div><div class="shop-meta">0.9 km · 100ft Road</div></div><span class="pill ok">Open</span></div>
+        <div class="shop-card"><div><div class="shop-name">The Kettle & Leaf</div><div class="shop-meta">1.6 km · Domlur</div></div><span class="pill neutral">Closed</span></div>
+      </div>
+    </div>
+
+    <div class="panel-head"><h2>Redemption history</h2><span class="sub">Last 5 redemptions</span></div>
+    <div class="grid cols-2">
+      <div class="card">
+        <div class="list-row">
+          <div class="l-left"><div class="icon-chip">☕</div><div><div class="l-title">Green Leaf Tea House</div><div class="l-sub">Today, redeemed successfully</div></div></div>
+          <div class="l-right">7:52 AM</div>
+        </div>
+        <div class="list-row">
+          <div class="l-left"><div class="icon-chip">☕</div><div><div class="l-title">Chai Adda Corner</div><div class="l-sub">Yesterday</div></div></div>
+          <div class="l-right">8:14 AM</div>
+        </div>
+        <div class="list-row">
+          <div class="l-left"><div class="icon-chip">☕</div><div><div class="l-title">Green Leaf Tea House</div><div class="l-sub">2 days ago</div></div></div>
+          <div class="l-right">9:03 AM</div>
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="margin:0 0 6px;font-size:15px;">Payment history</h3>
+        <div class="list-row">
+          <div class="l-left"><div class="icon-chip">₹</div><div><div class="l-title">Monthly plan · ₹500</div><div class="l-sub">Paid via Razorpay UPI</div></div></div>
+          <span class="pill ok">Paid</span>
+        </div>
+        <div class="list-row">
+          <div class="l-left"><div class="icon-chip">₹</div><div><div class="l-title">Monthly plan · ₹500</div><div class="l-sub">Paid via Razorpay Card</div></div></div>
+          <span class="pill ok">Paid</span>
+        </div>
+        <div class="list-row">
+          <div class="l-left"><div class="icon-chip">🔔</div><div><div class="l-title">Renewal reminder</div><div class="l-sub">3 days before plan expiry</div></div></div>
+          <span class="pill neutral">Notif.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SHOP OWNER DASHBOARD ============ -->
+  <div class="section" id="sec-shop">
+    <div class="panel-head"><h2>Green Leaf Tea House</h2><span class="pill ok"><span class="dot"></span>Verified &amp; active</span></div>
+
+    <div class="grid cols-3">
+      <div class="card metric"><div class="m-label">Today's redemptions</div><div class="m-val" id="shopTodayCount">14</div></div>
+      <div class="card metric"><div class="m-label">This week</div><div class="m-val">86</div></div>
+      <div class="card metric"><div class="m-label">Repeat customers</div><div class="m-val">61%</div></div>
+    </div>
+
+    <div class="panel-head"><h2>Scan customer QR</h2><span class="sub">Paste a demo token or use the simulate button</span></div>
+    <div class="grid cols-2">
+      <div class="card">
+        <div class="scan-zone">
+          <div class="frame">
+            <div class="scan-line"></div>
+            <svg width="46" height="46" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="#8ba578" stroke-width="1.6"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="#8ba578" stroke-width="1.6"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="#8ba578" stroke-width="1.6"/><path d="M14 14h3v3M21 21h-4v-4" stroke="#8ba578" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </div>
+          <div style="font-size:13.5px;color:var(--ink-muted);">Point the in-app scanner at the customer's QR</div>
+          <input class="token-input" id="tokenInput" placeholder="demo-qr-token-xxxxxx" />
+          <div style="display:flex;gap:10px;margin-top:14px;justify-content:center;flex-wrap:wrap;">
+            <button class="btn btn-dark" onclick="validateScan(true)">Simulate valid scan</button>
+            <button class="btn btn-outline" onclick="validateScan(false)">Simulate expired/used QR</button>
+          </div>
+          <div class="validate-result" id="validateResult"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin:0 0 14px;font-size:15px;">Recent redemptions</h3>
+        <table>
+          <thead><tr><th>Customer</th><th>Time</th><th>Status</th></tr></thead>
+          <tbody id="shopHistoryBody">
+            <tr><td>Aditi Rao</td><td>8:41 AM</td><td><span class="pill ok">Approved</span></td></tr>
+            <tr><td>Rohan Mehta</td><td>8:22 AM</td><td><span class="pill ok">Approved</span></td></tr>
+            <tr><td>Sana Iyer</td><td>7:58 AM</td><td><span class="pill ok">Approved</span></td></tr>
+            <tr><td>Vikram Shah</td><td>7:40 AM</td><td><span class="pill err">Already used</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ ADMIN DASHBOARD ============ -->
+  <div class="section" id="sec-admin">
+    <div class="panel-head"><h2>Platform overview</h2><span class="sub">Live as of today, 9:14 AM IST</span></div>
+
+    <div class="grid cols-4">
+      <div class="card stat-card"><div class="s-icon" style="background:var(--tea-100);">👥</div><div class="s-label">Total users</div><div class="s-val">12,480</div><div class="s-delta">+3.2% this week</div></div>
+      <div class="card stat-card"><div class="s-icon" style="background:var(--gold-100);">📋</div><div class="s-label">Active subscriptions</div><div class="s-val">8,912</div><div class="s-delta">+1.8% this week</div></div>
+      <div class="card stat-card"><div class="s-icon" style="background:var(--tea-100);">🏪</div><div class="s-label">Verified tea shops</div><div class="s-val">312</div><div class="s-delta">+6 this week</div></div>
+      <div class="card stat-card"><div class="s-icon" style="background:var(--gold-100);">☕</div><div class="s-label">Today's redemptions</div><div class="s-val">4,027</div><div class="s-delta">+412 vs yesterday</div></div>
+      <div class="card stat-card"><div class="s-icon" style="background:var(--tea-100);">₹</div><div class="s-label">Revenue (MTD)</div><div class="s-val">₹44.5L</div><div class="s-delta">+9.1% MoM</div></div>
+      <div class="card stat-card"><div class="s-icon" style="background:var(--err-bg);">⚠</div><div class="s-label">Failed payments</div><div class="s-val" style="color:var(--err);">23</div><div class="s-delta" style="color:var(--err);">Needs review</div></div>
+      <div class="card stat-card"><div class="s-icon" style="background:var(--gold-100);">⏳</div><div class="s-label">Shops pending approval</div><div class="s-val">7</div><div class="s-delta" style="color:var(--ink-muted);">Awaiting docs</div></div>
+      <div class="card stat-card"><div class="s-icon" style="background:var(--tea-100);">↩</div><div class="s-label">Refunds this month</div><div class="s-val">5</div><div class="s-delta" style="color:var(--ink-muted);">₹2,500 total</div></div>
+    </div>
+
+    <div class="panel-head"><h2>Shop approvals</h2><span class="sub">Pending verification</span></div>
+    <div class="grid cols-2">
+      <div class="card">
+        <div class="approve-row">
+          <div><div class="l-title">Morning Brew Co.</div><div class="l-sub">Koramangala · submitted 2 days ago</div></div>
+          <div class="approve-actions"><button class="btn btn-dark btn-sm" onclick="approveShop(this)">Approve</button><button class="btn btn-outline btn-sm" onclick="rejectShop(this)">Reject</button></div>
+        </div>
+        <div class="approve-row">
+          <div><div class="l-title">Tulsi Tea Stall</div><div class="l-sub">Jayanagar · submitted 1 day ago</div></div>
+          <div class="approve-actions"><button class="btn btn-dark btn-sm" onclick="approveShop(this)">Approve</button><button class="btn btn-outline btn-sm" onclick="rejectShop(this)">Reject</button></div>
+        </div>
+        <div class="approve-row">
+          <div><div class="l-title">Steam &amp; Spice</div><div class="l-sub">HSR Layout · submitted 4 hours ago</div></div>
+          <div class="approve-actions"><button class="btn btn-dark btn-sm" onclick="approveShop(this)">Approve</button><button class="btn btn-outline btn-sm" onclick="rejectShop(this)">Reject</button></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin:0 0 10px;font-size:15px;">Audit log</h3>
+        <div class="audit-row"><div class="audit-dot" style="background:var(--ok);"></div><div><div class="audit-text">Redemption approved at Green Leaf Tea House</div><div class="audit-time">09:12:04</div></div></div>
+        <div class="audit-row"><div class="audit-dot" style="background:var(--gold-600);"></div><div><div class="audit-text">Shop "Morning Brew Co." submitted for verification</div><div class="audit-time">08:58:41</div></div></div>
+        <div class="audit-row"><div class="audit-dot" style="background:var(--err);"></div><div><div class="audit-text">Duplicate redemption attempt blocked (customer #4471)</div><div class="audit-time">08:45:19</div></div></div>
+        <div class="audit-row"><div class="audit-dot" style="background:var(--ok);"></div><div><div class="audit-text">Payment reconciled · ₹500 · Razorpay webhook</div><div class="audit-time">08:30:02</div></div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(window._tt);
+    window._tt = setTimeout(()=>t.classList.remove('show'), 2600);
+  }
+
+  document.getElementById('roleSwitch').addEventListener('click', (e)=>{
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    document.querySelectorAll('#roleSwitch button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    document.getElementById('sec-' + btn.dataset.role).classList.add('active');
+  });
+
+  let qrTimerInterval = null;
+
+  function generateQr(){
+    const box = document.getElementById('qrBox');
+    const btn = document.getElementById('getTeaBtn');
+    document.getElementById('qrcode').innerHTML = '';
+    const token = 'chaipass-' + Math.random().toString(36).slice(2,10);
+    new QRCode(document.getElementById('qrcode'), { text: token, width: 168, height: 168, colorDark:'#211d18', colorLight:'#ffffff' });
+    box.style.display = 'flex';
+    btn.style.display = 'none';
+    document.getElementById('teaTodayTitle').textContent = 'Show this to the shop';
+    document.getElementById('teaTodaySub').textContent = 'One scan redeems today\\'s tea. It expires automatically.';
+
+    let seconds = 90;
+    document.getElementById('qrCountdown').textContent = seconds;
+    clearInterval(qrTimerInterval);
+    qrTimerInterval = setInterval(()=>{
+      seconds -= 1;
+      document.getElementById('qrCountdown').textContent = seconds;
+      if(seconds <= 0){
+        clearInterval(qrTimerInterval);
+        resetQr();
+        showToast('QR expired — generate a new one');
+      }
+    }, 1000);
+  }
+
+  function resetQr(){
+    clearInterval(qrTimerInterval);
+    document.getElementById('qrBox').style.display = 'none';
+    document.getElementById('getTeaBtn').style.display = 'inline-flex';
+    document.getElementById('teaTodayTitle').textContent = "Today's tea is ready";
+    document.getElementById('teaTodaySub').textContent = 'Generate your QR and show it to any participating shop to redeem.';
+  }
+
+  function validateScan(isValid){
+    const el = document.getElementById('validateResult');
+    el.classList.remove('success','fail');
+    el.classList.add('show');
+    if(isValid){
+      el.classList.add('success');
+      el.innerHTML = '✓ SUCCESS — tea approved for Aditi Rao · credits remaining: 20';
+      const tbody = document.getElementById('shopHistoryBody');
+      const row = document.createElement('tr');
+      row.innerHTML = '<td>Aditi Rao</td><td>Just now</td><td><span class="pill ok">Approved</span></td>';
+      tbody.prepend(row);
+      const countEl = document.getElementById('shopTodayCount');
+      countEl.textContent = parseInt(countEl.textContent) + 1;
+      showToast('Tea approved ✓ pushed to customer in real time');
+    } else {
+      el.classList.add('fail');
+      el.innerHTML = '✕ ALREADY_REDEEMED_TODAY — this customer already got their tea today';
+      showToast('Redemption blocked: duplicate for today');
+    }
+  }
+
+  function approveShop(btn){
+    const row = btn.closest('.approve-row');
+    row.style.opacity = '0.4';
+    row.querySelector('.approve-actions').innerHTML = '<span class="pill ok">Verified</span>';
+    showToast('Shop verified and QR identity issued');
+  }
+  function rejectShop(btn){
+    const row = btn.closest('.approve-row');
+    row.style.opacity = '0.4';
+    row.querySelector('.approve-actions').innerHTML = '<span class="pill err">Rejected</span>';
+    showToast('Shop application rejected');
+  }
+</script>
+</body>
+</html>
