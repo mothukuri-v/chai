@@ -70,3 +70,10 @@ docker compose up --build
 See `docs/ARCHITECTURE.md`, `docs/API.md`, and `docs/DATA_MODEL.md` for full details, and
 `docs/SECURITY_RULES.md` for how duplicate redemptions, fake QR codes, expired subscriptions,
 and duplicate payments are specifically prevented.
+
+## Going live on a real domain
+
+`docker-compose.yml` above is for local development only. To put the stack behind a real
+domain with automatic HTTPS (Caddy reverse proxy, no ports exposed except 80/443), see
+**`docs/DEPLOY.md`** — it walks through DNS, EC2 security group rules, and the
+production compose overlay (`infra/docker-compose.prod.yml`) step by step.

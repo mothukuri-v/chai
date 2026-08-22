@@ -1,0 +1,32 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /internal
+
+spring:
+  application:
+    name: business-service
+  data:
+    mongodb:
+      uri: ${MONGO_URI:mongodb://localhost:27017/chaipass}
+
+chaipass:
+  service-jwt-secret: ${SERVICE_JWT_SECRET:replace-with-strong-secret}
+  qr-jwt-secret: ${QR_JWT_SECRET:replace-with-strong-secret}
+  qr-token-ttl-seconds: 90
+  subscription:
+    plan-amount-inr: 500
+    plan-days: 30
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    com.teasub: INFO

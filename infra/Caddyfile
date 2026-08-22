@@ -1,0 +1,28 @@
+{
+    # Caddy auto-issues and renews a Let's Encrypt certificate for the domain below —
+    # no certbot, no manual renewal cron. Requires port 80 + 443 open and the domain's
+    # A record pointed at this box's public IP before you start Caddy.
+}
+
+# Replace with your real domain. Everything under this one origin means the frontend
+# calling /api/* is same-origin — no CORS configuration needed at all in production.
+your-domain.com {
+    handle /api/* {
+        reverse_proxy gateway:4000
+    }
+
+    handle /socket.io/* {
+        reverse_proxy gateway:4000
+    }
+
+    handle {
+        reverse_proxy frontend:80
+    }
+
+    encode gzip
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+    }
+}

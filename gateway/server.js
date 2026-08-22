@@ -20,11 +20,14 @@ const logger = require('./services/logger');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: process.env.CORS_ORIGIN, credentials: true } });
+const io = new Server(server, { cors: { origin: (process.env.CORS_ORIGIN || 'http://localhost:5173').split(','), credentials: true } });
 app.set('io', io); // used to push live "tea approved" events to customers
 
 app.use(helmet());
-app.use(cors({ origin: process.env.CORS_ORIGIN, credentials: true }));
+app.use(cors({
+  origin: (process.env.CORS_ORIGIN || 'http://localhost:5173').split(','),
+  credentials: true,
+}));
 app.use(cookieParser());
 app.use(morgan('combined', { stream: { write: (msg) => logger.info(msg.trim()) } }));
 
