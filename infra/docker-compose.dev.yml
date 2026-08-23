@@ -1,11 +1,3 @@
-# Local development overlay — publishes ports directly to the host so you can hit
-# services without a domain or Caddy in front. This is what you were using before
-# going live. Usage:
-#
-#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
-#
-# Do NOT combine this with docker-compose.prod.yml — pick one or the other.
-
 services:
   mongo:
     ports: ["27017:27017"]
@@ -17,6 +9,3 @@ services:
 
   frontend:
     ports: ["5173:80"]
-    build:
-      args:
-        VITE_API_URL: http://localhost:4000/api
