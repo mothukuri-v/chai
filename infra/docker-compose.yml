@@ -2,7 +2,6 @@ services:
   mongo:
     image: mongo:7
     command: ["--replSet", "rs0", "--bind_ip_all"]
-    ports: ["27017:27017"]
     volumes:
       - mongo-data:/data/db
     healthcheck:
@@ -10,6 +9,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    expose: ["27017"]
+    networks: [internal]
 
   business-service:
     build: ../business-service
@@ -20,7 +21,7 @@ services:
     depends_on:
       mongo:
         condition: service_healthy
-    expose: ["8080"]          # no ports: mapping — not reachable from the host, gateway-only
+    expose: ["8080"]
     networks:
       - internal
 
@@ -35,8 +36,8 @@ services:
       RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID}
       RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET}
       RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET}
-      CORS_ORIGIN: http://localhost:5173
-    ports: ["4000:4000"]
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+    expose: ["4000"]
     depends_on:
       - business-service
       - mongo
@@ -46,12 +47,12 @@ services:
 
   frontend:
     build: ../frontend
-    ports: ["5173:80"]
+    expose: ["80"]
     depends_on: [gateway]
     networks: [public]
 
 networks:
-  internal:      # business-service + mongo live here only — no route from the frontend
+  internal:
   public:
 
 volumes:

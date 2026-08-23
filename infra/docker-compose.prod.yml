@@ -1,8 +1,10 @@
-# Production overlay — adds a Caddy reverse proxy with automatic HTTPS and stops
-# publishing the gateway/frontend ports directly to the host, since Caddy is now the
-# only public entry point. Usage:
+# Production overlay — adds a Caddy reverse proxy with automatic HTTPS. The base
+# compose file no longer publishes any host ports, so this is the only thing that
+# makes the stack reachable from outside the box. Usage:
 #
 #   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# Do NOT combine this with docker-compose.dev.yml — pick one or the other.
 #
 # Prerequisites before running this:
 #   1. Point your domain's A record at this machine's public IP
@@ -11,16 +13,13 @@
 
 services:
   gateway:
-    ports: []          # no longer published to the host — only Caddy/frontend reach it, over the internal/public docker network
-    build:
-      args:
-        NODE_ENV: production
+    environment:
+      CORS_ORIGIN: https://your-domain.com   # update to match your real domain
 
   frontend:
-    ports: []          # no longer published directly — Caddy proxies to it instead
     build:
       args:
-        VITE_API_URL: /api   # same-origin via Caddy, so a relative path works — no CORS needed
+        VITE_API_URL: /api   # same-origin via Caddy — no CORS needed
 
   caddy:
     image: caddy:2-alpine

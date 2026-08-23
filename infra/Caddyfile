@@ -1,9 +1,10 @@
 {
     # Caddy auto-issues and renews a Let's Encrypt certificate for the domain below —
     # no certbot, no manual renewal cron. Requires port 80 + 443 open and the domain's
-    # A record pointed at this box's public IP before you start Caddy.
+    # A record pointed at this box's public IP before this block will get a real cert.
 }
 
+# --- OPTION A: real domain, automatic HTTPS (use this once DNS is pointed here) ---
 # Replace with your real domain. Everything under this one origin means the frontend
 # calling /api/* is same-origin — no CORS configuration needed at all in production.
 your-domain.com {
@@ -26,3 +27,20 @@ your-domain.com {
         X-Frame-Options "DENY"
     }
 }
+
+# --- OPTION B: no domain yet, testing over plain HTTP by IP ---
+# Comment out the "your-domain.com { ... }" block above and uncomment this one to
+# verify the whole stack end-to-end (via http://<your-ec2-ip>/) before DNS is ready.
+# No TLS in this mode — switch back to Option A once your domain resolves here.
+#
+# :80 {
+#     handle /api/* {
+#         reverse_proxy gateway:4000
+#     }
+#     handle /socket.io/* {
+#         reverse_proxy gateway:4000
+#     }
+#     handle {
+#         reverse_proxy frontend:80
+#     }
+# }

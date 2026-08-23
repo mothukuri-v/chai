@@ -1,8 +1,16 @@
 # Going live: from localhost to a public domain
 
-This assumes you're deploying on the same EC2 box you've been testing on. It adds a
-Caddy reverse proxy (`infra/docker-compose.prod.yml`) so the whole app sits behind one
-public HTTPS domain instead of raw container ports.
+The stack has one base file plus two mutually-exclusive overlays — pick whichever
+matches what you're doing right now:
+
+| Command | When to use it |
+|---|---|
+| `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build` | Local testing, no domain — hits services directly on `:5173` / `:4000` / `:27017` |
+| `docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build` | Live, behind a real domain with HTTPS via Caddy on `:80`/`:443` |
+
+**Never combine both** (`-f docker-compose.dev.yml -f docker-compose.prod.yml` together) —
+they configure the same services differently and will conflict. The base file by
+itself publishes no ports at all, so one of the two overlays is required either way.
 
 ## 1. Get a domain pointed at your instance
 
@@ -17,29 +25,32 @@ public HTTPS domain instead of raw container ports.
 
 ## 2. Open the right ports in your EC2 security group
 
-In the AWS console → EC2 → your instance → Security tab → security group → Edit inbound rules:
-
 | Type | Port | Source | Why |
 |---|---|---|---|
-| HTTP | 80 | 0.0.0.0/0 | Caddy needs this for the Let's Encrypt HTTP-01 challenge, and to redirect to HTTPS |
+| HTTP | 80 | 0.0.0.0/0 | Caddy's Let's Encrypt challenge + HTTPS redirect |
 | HTTPS | 443 | 0.0.0.0/0 | The actual live traffic |
 | SSH | 22 | your IP only | Keep this locked to your IP, not 0.0.0.0/0 |
 
-**Remove/don't add public rules for 4000 or 5173** — once `docker-compose.prod.yml` is
-applied, those ports are no longer published to the host at all (Caddy is the only
-public entry point; the gateway and frontend containers are reachable only from Caddy
-over the internal Docker network).
+Don't open 4000, 5173, 8080, or 27017 publicly — with the prod overlay, none of them
+are even published to the host anymore (only `expose`d internally between
+containers), so opening those ports in the security group wouldn't do anything useful
+even if you did.
 
 ## 3. Point the Caddyfile at your real domain
 
-Edit `infra/Caddyfile` and replace the placeholder:
+Edit `infra/Caddyfile` and replace the placeholder domain in the "OPTION A" block:
 ```
 your-domain.com {
 ```
-with your actual domain, e.g.:
-```
-chaipass.yourdomain.com {
-```
+with your actual domain, e.g. `chaipass.yourdomain.com {`.
+
+**If DNS hasn't propagated yet** and you want to sanity-check the stack first, comment
+out the Option A block and uncomment Option B (`:80 { ... }`) instead — that serves
+plain HTTP on port 80 to anyone hitting your IP directly, no domain or TLS required.
+Switch back to Option A once your domain resolves.
+
+Also update `gateway.environment.CORS_ORIGIN` in `docker-compose.prod.yml` to your
+real `https://your-domain.com`.
 
 ## 4. Bring it up with the production overlay
 
@@ -48,39 +59,38 @@ cd ~/chai/infra
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
 
-What this changes versus your current local setup:
-- Adds a `caddy` container publishing 80/443, reverse-proxying `/api/*` and
-  `/socket.io/*` to the gateway and everything else to the frontend, and automatically
-  requesting + renewing a Let's Encrypt certificate for your domain.
-- Stops publishing `gateway:4000` and `frontend:5173` directly to the host.
-- Rebuilds the frontend with `VITE_API_URL=/api` (a relative path), since the frontend
-  and API are now served from the same origin through Caddy — this also means you no
-  longer need CORS configured for cross-origin browser calls.
-
 ## 5. Verify
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
-curl -I https://chaipass.yourdomain.com
+curl -I https://chaipass.yourdomain.com     # or http://<ec2-ip> if using Option B
 docker compose -f docker-compose.yml -f docker-compose.prod.yml logs caddy
 ```
-The `caddy` logs should show it obtaining a certificate on first start. Visiting
-`https://your-domain.com` in a browser should show the app with a valid padlock.
+The `caddy` logs should show it obtaining a certificate on first start (Option A only).
 
-## 6. Update `.env` for production values
+## 6. Create your first account
 
-Your existing `infra/.env` still needs real secrets (not the placeholder ones from
-`.env.example`):
+The database starts empty — there is no seeded login. Register through the UI's
+sign-up flow, or directly:
 ```bash
-nano ~/chai/infra/.env
+curl -X POST https://chaipass.yourdomain.com/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"role":"customer","name":"Test User","email":"you@example.com","phone":"9999999999","password":"a-strong-password"}'
 ```
+Then log in with that email/password. `role` can be `customer` or `shop_owner` — admin
+accounts aren't self-registrable by design (see `docs/ARCHITECTURE.md`); seed one
+directly in MongoDB when you need it:
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml exec mongo mongosh chaipass \
+  --eval 'db.users.updateOne({email:"you@example.com"}, {$set:{role:"admin"}})'
+```
+
+## 7. Update `.env` for production values
+
 - Generate strong random values for `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`,
   `SERVICE_JWT_SECRET`, `QR_JWT_SECRET`: `openssl rand -hex 32` for each.
 - Set `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` / `RAZORPAY_WEBHOOK_SECRET` to your real
-  (or test-mode) Razorpay dashboard values.
-- `CORS_ORIGIN` can stay as-is; it's now a fallback rather than load-bearing since
-  frontend↔gateway calls are same-origin through Caddy.
-- In the Razorpay dashboard, set the webhook URL to
+  (or test-mode) Razorpay dashboard values, and set the webhook URL there to
   `https://chaipass.yourdomain.com/api/payments/webhook`.
 
 After changing `.env`, restart so the new values take effect:
@@ -88,21 +98,13 @@ After changing `.env`, restart so the new values take effect:
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
 
-## 7. Ongoing operations
+## 8. Ongoing operations
 
 - **Logs:** `docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f <service>`
 - **Restart one service:** `docker compose -f docker-compose.yml -f docker-compose.prod.yml restart gateway`
 - **Redeploy after a code change:** `docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build`
-- **Certificate renewal:** automatic — Caddy handles this itself, nothing to schedule.
+- **Certificate renewal:** automatic — Caddy handles this itself.
 - **Mongo backups:** this setup runs a single-node Mongo for simplicity. Before real
   customer data goes in, either move to MongoDB Atlas (managed, backed up, and
   matches the `docs/ARCHITECTURE.md` production target) or set up a cron `mongodump`
   to S3 — ask me and I'll wire either one up.
-
-## What's still "local machine" about this setup
-
-Running everything on one EC2 box is fine to get live and demo real traffic, but it's a
-single point of failure and the Mongo replica set is single-node (fine for
-transactions, not for durability). `docs/ARCHITECTURE.md`'s AWS section describes the
-next step up — ECS Fargate for gateway/business-service, S3+CloudFront for the
-frontend, MongoDB Atlas — for whenever you're ready to move off a single instance.
